@@ -1,5 +1,7 @@
 (ns us.edwardstx.hvac.transition)
 
+(def threshold 0.5)
+
 (defn set-mode! [m s]
   (swap! s #(assoc % :mode m)))
 
@@ -12,14 +14,14 @@
 (defn heat-active? [s]
   (let [d (delta s)]
     (if (= :off (:status s))
-      (> -1.0 d)
-      (> 1.0 d))))
+      (> (- threshold) d)
+      (> threshold d))))
 
 (defn cool-active? [s]
   (let [d (delta s)]
     (if (= :off (:status s))
-      (< 1.0 d)
-      (< -1.0 d))))
+      (< threshold d)
+      (< (- threshold) d))))
 
 (defn get-new-state [s]
   (let [m (:mode s)]

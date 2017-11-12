@@ -17,9 +17,9 @@
 (defonce s (atom {:mode :off
                   :temp 70
                   :lcd nil
-                  :at (at/mk-pool)
-                  :term (d/deferred)
-                  :nrepl (nrepl/start-server :port 7888)
+;;                  :at (at/mk-pool)
+;;                  :term (d/deferred)
+;;                  :nrepl (nrepl/start-server :port 7888)
                   :status :off}))
 
 (defn update-status [sm]
@@ -64,6 +64,9 @@
 (defn init []
   (Gpio/wiringPiSetupSys)
   (swap! s #(assoc % :lcd (display/init-display)))
+  (swap! s #(assoc % :nrepl (nrepl/start-server :port 7888)))
+  (swap! s #(assoc % :at (at/mk-pool)))
+  (swap! s #(assoc % :term (d/deferred)))
   (let [c (mqtt/conn (mqtt/conf))]
     (swap! s #(assoc % :mqtt c))
     (stream/consume update-mode (mqtt/subscribe c ".hvac.mode"))

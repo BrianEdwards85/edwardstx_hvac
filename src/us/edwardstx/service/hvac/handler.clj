@@ -2,6 +2,7 @@
   (:require [com.stuartsierra.component :as component]
             [clojure.tools.logging      :as log]
             [us.edwardstx.common.tasks :as tasks]
+            [us.edwardstx.common.events :refer [publish-event]]
             [us.edwardstx.service.hvac.state :as state]
             [us.edwardstx.service.hvac.controller :refer [status-map]]
             [manifold.stream :as s]
@@ -14,21 +15,24 @@
     (Integer/parseInt x)
     (catch Exception e nil)))
 
-(defn mode-handler [state {:keys [body response]}]
+(defn mode-handler [{:keys [state events]} {:keys [body response]}]
   (d/success! response true)
   (let [mode (keyword body)]
-    (if (status-set mode)
+    (when (status-set mode)
+      (publish-event events "state.mode.updated" {:mode mode})
       (state/update-state state :mode mode))))
 
-(defn temp-handler [state {:keys [body response]}]
+(defn temp-handler [{:keys [state events]} {:keys [body response]}]
   (d/success! response true)
-  (if-let [temp (parseInteger body)]
+  (when-let [temp (parseInteger body)]
+    (publish-event events "state.temp.updated" {:temp temp})
     (state/update-state state :temp temp)))
 
-(defn map-handler [state {:keys [body response]}]
+(defn map-handler [{:keys [state events]} {:keys [body response]}]
   (d/success! response true)
   (if (map? body)
     (let [{:keys [mode temp]} body]
+      (publish-event events "state.updated" body)
       (if (and mode (status-set mode))
         (state/update-state state :mode mode))
       (if (and temp (integer? temp))
@@ -36,22 +40,22 @@
 
       )))
 
-(defn create-handlers [state tasks]
+(defn create-handlers [{:keys [tasks] :as handler}]
   (let [mode-handler-stream (tasks/task-subscription tasks "state.mode.update")
         temp-handler-stream (tasks/task-subscription tasks "state.temp.update")
         map-handler-stream (tasks/task-subscription tasks "state.update")]
-    (s/consume (partial map-handler state) map-handler-stream)
-    (s/consume (partial mode-handler state) mode-handler-stream)
-    (s/consume (partial temp-handler state) temp-handler-stream)
-    (list mode-handler-stream temp-handler-stream)
+    (s/consume (partial map-handler handler) map-handler-stream)
+    (s/consume (partial mode-handler handler) mode-handler-stream)
+    (s/consume (partial temp-handler handler) temp-handler-stream)
+    (list mode-handler-stream temp-handler-stream map-handler-stream)
     )
   )
 
-(defrecord Handler [state tasks streams]
+(defrecord Handler [state tasks events streams]
   component/Lifecycle
 
   (start [this]
-    (assoc this :streams (create-handlers state tasks)))
+    (assoc this :streams (create-handlers this)))
 
   (stop [this]
     (->> this
@@ -63,4 +67,4 @@
 (defn new-handler []
   (component/using
    (map->Handler {})
-   [:state :tasks]))
+   [:state :tasks :events]))

@@ -30,7 +30,7 @@
    :rabbitmq (new-rabbitmq)
    :events (new-events)
    :display (new-display)
-   :temp (new-temp 5000)
+   :temp (new-temp 15000)
    :state (new-state)
    :orchestrator (new-orchestrator)
    :handler (new-handler)

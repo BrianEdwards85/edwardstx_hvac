@@ -1,9 +1,11 @@
 (ns us.edwardstx.service.hvac.state
   (:require [com.stuartsierra.component   :as component]
             [manifold.stream :as s]
+            [us.edwardstx.common.events :refer [publish-event]]
             [us.edwardstx.service.hvac.transition :refer [get-new-status]]))
 
-(defn publish-state [{:keys [streams]} st]
+(defn publish-state [{:keys [streams events]} st]
+  (publish-event events "status" st)
   (doall (map
           #(s/put! % st)
           @streams))
@@ -20,7 +22,7 @@
     (swap! streams #(conj % s))
     s))
 
-(defrecord State [state-map streams]
+(defrecord State [events state-map streams]
   component/Lifecycle
 
   (start [this]
@@ -34,4 +36,6 @@
     this))
 
 (defn new-state []
-  (map->State {}))
+  (component/using
+   (map->State {})
+   [:events]))

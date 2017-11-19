@@ -9,7 +9,7 @@
             [us.edwardstx.service.hvac.orchestrator :refer [new-orchestrator]]
             [us.edwardstx.service.hvac.handler :refer [new-handler]]
             [us.edwardstx.common.conf     :refer [new-conf]]
-            [us.edwardstx.common.events   :refer [new-events]]
+            [us.edwardstx.common.events   :refer [new-events publish-event]]
             [us.edwardstx.common.keys     :refer [new-keys]]
             [us.edwardstx.common.logging  :refer [new-logging]]
             [us.edwardstx.common.rabbitmq :refer [new-rabbitmq]]
@@ -40,6 +40,7 @@
 (defn -main [& args]
   (let [semaphore (d/deferred)]
     (Gpio/wiringPiSetupSys)
+
     (reset! system (init-system env))
 
     (swap! system component/start)
@@ -47,6 +48,8 @@
     (println "Started")
 
     (log/info "HVAC Service started")
+
+    (publish-event (:events @system) "booted" {:status "UP"})
 
     (deref semaphore)
 

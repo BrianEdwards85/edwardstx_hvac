@@ -16,7 +16,9 @@
 
 (defn display-state [display st]
   (display/show display
-                (list (format  "Temp: %3.1fF" (:last st))
+                (list (if-let [remote-temp (-> st :remote :temperature)]
+                        (format  "Temp: %3.1fF / %3.1fF" (:last st) remote-temp)
+                        (format  "Temp: %3.1fF" (:last st)))
                       (format  "Set:  %2d.0F" (:temp st))
                       (format  "Mode: %s / %s" (-> st :mode name) (-> st :status name))
                       (.format (LocalDateTime/now) formatter))))

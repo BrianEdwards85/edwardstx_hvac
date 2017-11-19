@@ -11,7 +11,7 @@
                  [overtone/at-at "1.2.0"]
                  [com.pi4j/pi4j-device "1.1"]
                  [com.pi4j/pi4j-core "1.1"]
-                 [us.edwardstx/edwardstx_common "1.0.3-SNAPSHOT"]]
+                 [us.edwardstx/edwardstx_common "1.0.4-SNAPSHOT"]]
 
   :main us.edwardstx.service.hvac
 

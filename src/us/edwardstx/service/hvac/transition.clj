@@ -2,17 +2,21 @@
 
 (def threshold 0.5)
 
-(defn delta [s]
-  (- (:last s) (:temp s)))
+(defn delta [f {:keys [last temp] :as st}]
+  (-
+   (if-let [remote (-> st :remote :temperature)]
+           (f remote last)
+           last)
+   temp))
 
 (defn heat-active? [s]
-  (let [d (delta s)]
+  (let [d (delta min s)]
     (if (= :off (:status s))
       (> (- threshold) d)
       (> threshold d))))
 
 (defn cool-active? [s]
-  (let [d (delta s)]
+  (let [d (delta max s)]
     (if (= :off (:status s))
       (< threshold d)
       (< (- threshold) d))))
@@ -26,10 +30,3 @@
       (and (contains? #{:eheat :heat} m) (heat-active? s)) m
       :else :off)))
 
-
-(comment
-  (defn set-mode! [m s]
-    (swap! s #(assoc % :mode m)))
-
-  (defn set-temp! [t s]
-    (swap! s #(assoc % :temp t))))
